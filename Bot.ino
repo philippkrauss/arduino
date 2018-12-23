@@ -20,7 +20,8 @@ Motor rightMotor(right1, right2, 60);
 double Setpoint, Input, Output;
 
 //Specify the links and initial tuning parameters
-double Kp=56, Ki=0, Kd=.3;
+double Kp=20, Ki=30, Kd=.55;
+
 PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
 
 void setup() {
@@ -29,7 +30,8 @@ void setup() {
     mpu6050.begin();
     mpu6050.setGyroOffsets(0.6, 1.52, -0.14);
 
-    Setpoint = 0;
+    Setpoint = -1.5;
+    myPID.SetOutputLimits(-255, 255);
     //turn the PID on
     myPID.SetMode(AUTOMATIC);
 }
@@ -37,28 +39,25 @@ void setup() {
 void loop() {
     //*
     mpu6050.update();
-    int angle = mpu6050.getAngleX();
-    int absoluteAngle = angle;
-    if (angle > 0) {
-        absoluteAngle = angle * -1;
-    }
-    if (absoluteAngle < -35) {
+    float angle = mpu6050.getAngleX();
+    
+    if (angle < -45 || angle > 45) {
         leftMotor.forward(0);
         rightMotor.forward(0);
         return;
     }
-    Input = absoluteAngle;
+    Input = angle;
     myPID.Compute();
-    Serial.print(angle);
+    Serial.print((double)angle);
     Serial.print(",");
     Serial.println(Output);
 
-    if (angle < 0) {
+    if (Output > 0) {
         leftMotor.forward(Output);
         rightMotor.forward(Output);
     } else {
-        leftMotor.backward(Output);
-        rightMotor.backward(Output);
+        leftMotor.backward(Output * -1);
+        rightMotor.backward(Output * -1);
     }
     /**/
 }
